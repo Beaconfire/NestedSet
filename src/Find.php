@@ -681,6 +681,28 @@ class Find extends AbstractNestedSet
     }
 
     /**
+     * Builds a query to find the native nested set id from custom data
+     *
+     * @param array|null $columns_with_data
+     * @return Select
+     */
+    public function getFindNestedSetIdByCustomData($columns_with_data = null)
+    {
+        $select = new Select(['t' => $this->table]);
+    
+        $select->columns([$this->idColumn]);
+    
+        foreach ($columns_with_data as $column_name => $column_data) {
+            $select->where->equalTo(
+                "t.".$column_name,
+                $column_data
+            );
+        };
+    
+        return($select);
+    }
+
+    /**
      * Finds ancestors of a node
      *
      * @param mixed             $id Node identifier
@@ -972,5 +994,24 @@ class Find extends AbstractNestedSet
         }
 
         return $result;
+    }
+
+    /**
+     * Finds ids of nested set items by the custom data associated with them (implicit AND)
+     *
+     * @param $field_to_data_mapping (associative array, keys are column names, values are column find values)
+     * @return ResultInterface
+     */
+    public function findIdsByCustomData($field_to_data_mapping)
+    {
+
+        $query = $this->getFindNestedSetIdByCustomData($field_to_data_mapping);
+        $result = $this->sql->prepareStatementForSqlObject($query)->execute($parameters);
+
+        if (! $result instanceof ResultInterface || ! $result->isQueryResult()) {
+            throw new UnknownDbException();
+        }
+
+        return($result);
     }
 }
